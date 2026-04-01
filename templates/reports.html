@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+{% block title %}Reports{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4 py-4">
+
+    <div class="mb-4">
+        <h4 class="mb-1 fw-bold"><i class="bi bi-file-earmark-bar-graph me-2 text-primary"></i>Reports & Archives</h4>
+        <small class="text-muted">Download security reports and access log archives</small>
+    </div>
+
+    <div class="row g-4">
+        <!-- PDF Report -->
+        <div class="col-md-6 col-xl-4">
+            <div class="card border-0 h-100">
+                <div class="card-body d-flex flex-column">
+                    <div class="d-flex align-items-center gap-3 mb-4">
+                        <div class="p-3 rounded-3 bg-primary bg-opacity-15">
+                            <i class="bi bi-file-earmark-pdf text-primary fs-2"></i>
+                        </div>
+                        <div>
+                            <h6 class="mb-0 fw-bold">Weekly Security Report</h6>
+                            <small class="text-muted">PDF — Comprehensive threat summary</small>
+                        </div>
+                    </div>
+                    <p class="text-muted small flex-grow-1">
+                        Includes total devices, alert breakdown, high-risk devices, top DNS queries,
+                        and threat recommendations for the current week.
+                    </p>
+                    <a href="{{ url_for('main.download_report_pdf') }}"
+                       class="btn btn-primary mt-3">
+                        <i class="bi bi-download me-2"></i>Download PDF Report
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Archives List -->
+        <div class="col-12">
+            <div class="card border-0">
+                <div class="card-header">
+                    <h6 class="mb-0 fw-semibold"><i class="bi bi-archive me-2"></i>Log Archives</h6>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead>
+                                <tr>
+                                    <th class="ps-4">Archive Name</th>
+                                    <th>Size</th>
+                                    <th>Created</th>
+                                    <th>Type</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for archive in archives %}
+                                <tr>
+                                    <td class="ps-4">
+                                        <i class="bi bi-file-zip text-warning me-2"></i>
+                                        <code class="small">{{ archive.name }}</code>
+                                    </td>
+                                    <td class="text-muted small">
+                                        {% if archive.size > 1048576 %}
+                                            {{ (archive.size / 1048576) | round(2) }} MB
+                                        {% else %}
+                                            {{ (archive.size / 1024) | round(1) }} KB
+                                        {% endif %}
+                                    </td>
+                                    <td class="text-muted small">{{ archive.modified.strftime('%Y-%m-%d %H:%M') }}</td>
+                                    <td><span class="badge bg-secondary">Compressed Log</span></td>
+                                </tr>
+                                {% else %}
+                                <tr>
+                                    <td colspan="4" class="text-center py-5 text-muted">
+                                        <i class="bi bi-archive fs-1 d-block mb-2 opacity-25"></i>
+                                        No archives yet. Archives are created during log cleanup operations.
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

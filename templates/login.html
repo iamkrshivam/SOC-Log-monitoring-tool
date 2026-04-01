@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login | CampusSOC</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.11.3/font/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body class="login-page">
+
+<div class="login-bg">
+    <div class="login-grid"></div>
+</div>
+
+<div class="container-fluid vh-100 d-flex align-items-center justify-content-center">
+    <div class="login-card card shadow-lg border-0" style="max-width:420px; width:100%;">
+        <div class="card-body p-5">
+            <!-- Logo -->
+            <div class="text-center mb-4">
+                <div class="login-logo mb-3">
+                    <i class="bi bi-shield-fill-check"></i>
+                </div>
+                <h3 class="fw-bold">Campus<span class="text-primary">SOC</span></h3>
+                <p class="text-muted small">Security Operations Center</p>
+            </div>
+
+            <!-- Flash messages -->
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                    <div class="alert alert-{{ category }} alert-dismissible fade show py-2" role="alert">
+                        <small>{{ message }}</small>
+                        <button type="button" class="btn-close btn-sm" data-bs-dismiss="alert"></button>
+                    </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+
+            <!-- Login Form -->
+            <form method="POST" action="{{ url_for('auth.login') }}" novalidate>
+                {{ form.hidden_tag() }}
+
+                <div class="mb-3">
+                    <label for="username" class="form-label text-muted small fw-semibold">USERNAME</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-dark border-secondary">
+                            <i class="bi bi-person text-muted"></i>
+                        </span>
+                        {{ form.username(class="form-control bg-dark border-secondary text-white",
+                                        id="username", placeholder="Enter username",
+                                        autocomplete="username") }}
+                    </div>
+                </div>
+
+                <div class="mb-4">
+                    <label for="password" class="form-label text-muted small fw-semibold">PASSWORD</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-dark border-secondary">
+                            <i class="bi bi-lock text-muted"></i>
+                        </span>
+                        {{ form.password(class="form-control bg-dark border-secondary text-white",
+                                         id="password", placeholder="Enter password",
+                                         autocomplete="current-password") }}
+                        <button class="btn btn-outline-secondary border-secondary" type="button" id="togglePassword">
+                            <i class="bi bi-eye" id="eyeIcon"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="d-grid">
+                    {{ form.submit(class="btn btn-primary btn-lg fw-semibold") }}
+                </div>
+            </form>
+
+            <hr class="my-4 border-secondary">
+            <div class="text-center">
+                <small class="text-muted">
+                    <i class="bi bi-lock-fill me-1"></i>
+                    Authorized Access Only — All activity is monitored and logged
+                </small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/js/bootstrap.bundle.min.js"></script>
+<script>
+    document.getElementById('togglePassword').addEventListener('click', function() {
+        const pwd = document.getElementById('password');
+        const icon = document.getElementById('eyeIcon');
+        if (pwd.type === 'password') {
+            pwd.type = 'text';
+            icon.className = 'bi bi-eye-slash';
+        } else {
+            pwd.type = 'password';
+            icon.className = 'bi bi-eye';
+        }
+    });
+</script>
+</body>
+</html>

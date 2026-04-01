@@ -1,0 +1,289 @@
+{% extends "base.html" %}
+{% block title %}Settings{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4 py-4">
+
+    <div class="mb-4">
+        <h4 class="mb-1 fw-bold"><i class="bi bi-gear-fill me-2 text-primary"></i>System Settings</h4>
+        <small class="text-muted">SuperAdmin only — System configuration and management</small>
+    </div>
+
+    <div class="row g-4">
+
+        <!-- Retention Policy -->
+        <div class="col-md-6">
+            <div class="card border-0">
+                <div class="card-header">
+                    <h6 class="mb-0"><i class="bi bi-clock-history me-2"></i>Log Retention Policy</h6>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted small mb-3">
+                        Current retention: <strong>{{ policy.retention_days }} days</strong>
+                        {% if policy.last_cleanup %}
+                        | Last cleanup: <strong>{{ policy.last_cleanup.strftime('%Y-%m-%d %H:%M') }}</strong>
+                        {% endif %}
+                        | Auto cleanup: <span class="badge {% if policy.auto_cleanup_enabled %}bg-success{% else %}bg-danger{% endif %}">
+                            {% if policy.auto_cleanup_enabled %}Enabled{% else %}Disabled{% endif %}
+                        </span>
+                    </p>
+
+                    <form method="POST" class="mb-3">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <input type="hidden" name="action" value="update_retention">
+                        <div class="input-group">
+                            <span class="input-group-text bg-dark border-secondary">Retention Days</span>
+                            <input type="number" name="retention_days" class="form-control bg-dark border-secondary"
+                                   value="{{ policy.retention_days }}" min="1" max="365">
+                            <button type="submit" class="btn btn-primary">Update</button>
+                        </div>
+                    </form>
+
+                    <form method="POST" class="d-inline">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <input type="hidden" name="action" value="toggle_auto_cleanup">
+                        <button type="submit" class="btn btn-outline-{% if policy.auto_cleanup_enabled %}warning{% else %}success{% endif %} btn-sm">
+                            {% if policy.auto_cleanup_enabled %}
+                            <i class="bi bi-pause me-1"></i>Disable Auto Cleanup
+                            {% else %}
+                            <i class="bi bi-play me-1"></i>Enable Auto Cleanup
+                            {% endif %}
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Manual Cleanup -->
+        <div class="col-md-6">
+            <div class="card border-0 border-danger border-opacity-25">
+                <div class="card-header border-danger border-opacity-25">
+                    <h6 class="mb-0 text-danger"><i class="bi bi-trash3 me-2"></i>Manual Log Cleanup</h6>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted small mb-3">
+                        Manually delete logs older than the current retention period ({{ policy.retention_days }} days).
+                        Logs will be archived before deletion.
+                    </p>
+                    <form method="POST" onsubmit="return confirm('Are you sure? Old logs will be archived and deleted.')">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <input type="hidden" name="action" value="manual_cleanup">
+                        <button type="submit" class="btn btn-danger btn-sm">
+                            <i class="bi bi-trash3 me-2"></i>Run Manual Cleanup
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Subnet Configuration -->
+        <div class="col-md-6">
+            <div class="card border-0">
+                <div class="card-header">
+                    <h6 class="mb-0"><i class="bi bi-shield-lock me-2"></i>Network Access Control</h6>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted small mb-3">Restrict dashboard access to a specific subnet.</p>
+                    <form method="POST">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <input type="hidden" name="action" value="update_subnet">
+                        <div class="input-group">
+                            <span class="input-group-text bg-dark border-secondary">Subnet (CIDR)</span>
+                            <input type="text" name="allowed_subnet" class="form-control bg-dark border-secondary"
+                                   placeholder="e.g. 192.168.1.0/24">
+                            <button type="submit" class="btn btn-primary">Update</button>
+                        </div>
+                        <small class="text-muted mt-1 d-block">
+                            <i class="bi bi-info-circle me-1"></i>
+                            Caution: Setting an incorrect subnet will lock you out.
+                        </small>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Risk Recalculation -->
+        <div class="col-md-6">
+            <div class="card border-0">
+                <div class="card-header">
+                    <h6 class="mb-0"><i class="bi bi-graph-up-arrow me-2"></i>Risk Engine</h6>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted small mb-3">Manually trigger risk score recalculation for all devices.</p>
+                    <form method="POST">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <input type="hidden" name="action" value="recalculate_risk">
+                        <button type="submit" class="btn btn-info btn-sm">
+                            <i class="bi bi-arrow-clockwise me-2"></i>Recalculate All Risk Scores
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- User Management -->
+        <div class="col-12">
+            <div class="card border-0">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h6 class="mb-0"><i class="bi bi-people me-2"></i>User Management</h6>
+                    <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#addUserModal">
+                        <i class="bi bi-person-plus me-1"></i>Add User
+                    </button>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead>
+                                <tr>
+                                    <th class="ps-4">Username</th>
+                                    <th>Email</th>
+                                    <th>Role</th>
+                                    <th>Status</th>
+                                    <th>Last Login</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for user in users %}
+                                <tr>
+                                    <td class="ps-4 fw-semibold">{{ user.username }}</td>
+                                    <td class="text-muted small">{{ user.email or '—' }}</td>
+                                    <td>
+                                        <span class="badge {% if user.role == 'superadmin' %}bg-danger{% elif user.role == 'analyst' %}bg-warning text-dark{% else %}bg-secondary{% endif %}">
+                                            {{ user.role }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <span class="badge {% if user.is_active %}bg-success{% else %}bg-danger{% endif %}">
+                                            {% if user.is_active %}Active{% else %}Inactive{% endif %}
+                                        </span>
+                                    </td>
+                                    <td class="text-muted small">
+                                        {{ user.last_login.strftime('%Y-%m-%d %H:%M') if user.last_login else 'Never' }}
+                                    </td>
+                                    <td>
+                                        {% if user.id != current_user.id %}
+                                        <div class="d-flex gap-1">
+                                            <!-- Change Role -->
+                                            <form method="POST" action="{{ url_for('main.change_user_role', user_id=user.id) }}" class="d-inline">
+                                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                                <div class="input-group input-group-sm" style="width:160px;">
+                                                    <select name="role" class="form-select form-select-sm bg-dark border-secondary" style="font-size:0.75rem;">
+                                                        <option value="superadmin" {% if user.role=='superadmin' %}selected{% endif %}>SuperAdmin</option>
+                                                        <option value="analyst" {% if user.role=='analyst' %}selected{% endif %}>Analyst</option>
+                                                        <option value="viewer" {% if user.role=='viewer' %}selected{% endif %}>Viewer</option>
+                                                    </select>
+                                                    <button type="submit" class="btn btn-outline-primary btn-sm" title="Change Role">
+                                                        <i class="bi bi-check"></i>
+                                                    </button>
+                                                </div>
+                                            </form>
+                                            <!-- Toggle Active -->
+                                            <form method="POST" action="{{ url_for('main.deactivate_user', user_id=user.id) }}"
+                                                  onsubmit="return confirm('Toggle account status for {{ user.username }}?')">
+                                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                                <button type="submit" class="btn btn-outline-{% if user.is_active %}danger{% else %}success{% endif %} btn-sm"
+                                                        title="{% if user.is_active %}Deactivate{% else %}Activate{% endif %}">
+                                                    <i class="bi bi-{% if user.is_active %}person-x{% else %}person-check{% endif %}"></i>
+                                                </button>
+                                            </form>
+                                        </div>
+                                        {% else %}
+                                        <span class="text-muted small">Current user</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Audit Logs -->
+        <div class="col-12">
+            <div class="card border-0">
+                <div class="card-header">
+                    <h6 class="mb-0"><i class="bi bi-clipboard-data me-2"></i>Recent Audit Log</h6>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive" style="max-height:300px; overflow-y:auto;">
+                        <table class="table table-hover table-sm mb-0">
+                            <thead class="sticky-top">
+                                <tr>
+                                    <th class="ps-3">Time (UTC)</th>
+                                    <th>User</th>
+                                    <th>Action</th>
+                                    <th>Detail</th>
+                                    <th>IP</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for log in audit_logs %}
+                                <tr>
+                                    <td class="ps-3 text-muted small">{{ log.timestamp.strftime('%m/%d %H:%M:%S') }}</td>
+                                    <td class="fw-semibold small">{{ log.username }}</td>
+                                    <td><code class="small text-warning">{{ log.action }}</code></td>
+                                    <td class="text-muted small" style="max-width:250px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ log.detail or '—' }}</td>
+                                    <td class="small text-muted"><code>{{ log.ip_address or '—' }}</code></td>
+                                    <td>
+                                        <span class="badge {% if log.status == 'Success' %}bg-success{% else %}bg-danger{% endif %} bg-opacity-75">
+                                            {{ log.status }}
+                                        </span>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add User Modal -->
+<div class="modal fade" id="addUserModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="POST" action="{{ url_for('main.add_user') }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="modal-header">
+                    <h6 class="modal-title"><i class="bi bi-person-plus me-2"></i>Add New User</h6>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Username <span class="text-danger">*</span></label>
+                        <input type="text" name="username" class="form-control" required placeholder="e.g. john.doe">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Email</label>
+                        <input type="email" name="email" class="form-control" placeholder="user@campus.edu">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Role</label>
+                        <select name="role" class="form-select">
+                            <option value="viewer">Viewer</option>
+                            <option value="analyst">Analyst</option>
+                            <option value="superadmin">SuperAdmin</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Initial Password <span class="text-danger">*</span></label>
+                        <input type="password" name="password" class="form-control" required
+                               placeholder="Min 8 chars, mixed case, digit, special">
+                        <div class="form-text">User will be prompted to change this on first login.</div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Create User</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

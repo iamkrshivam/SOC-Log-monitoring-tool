@@ -1,0 +1,32 @@
+[Unit]
+Description=CampusSOC - Campus Security Operations Center
+After=network.target
+Wants=network-online.target
+
+[Service]
+Type=exec
+User=campussoc
+Group=campussoc
+WorkingDirectory=/opt/campus_soc_final
+Environment="FLASK_ENV=production"
+Environment="PATH=/opt/campus_soc_final/venv/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+ExecStart=/opt/campus_soc_final/venv/bin/gunicorn \
+    --workers 2 \
+    --threads 2 \
+    --worker-class gthread \
+    --bind 0.0.0.0:5000 \
+    --timeout 120 \
+    --keep-alive 5 \
+    --access-logfile /opt/campus_soc_final/logs/access.log \
+    --error-logfile /opt/campus_soc_final/logs/error.log \
+    --log-level info \
+    "run:app"
+ExecReload=/bin/kill -s HUP $MAINPID
+KillMode=mixed
+TimeoutStopSec=5
+PrivateTmp=true
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

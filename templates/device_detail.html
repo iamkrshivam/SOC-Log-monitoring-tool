@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+{% block title %}Device: {{ device.ip_address }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4 py-4">
+
+    <div class="d-flex align-items-center gap-3 mb-4">
+        <a href="{{ url_for('main.devices') }}" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-arrow-left"></i>
+        </a>
+        <div>
+            <h4 class="mb-0 fw-bold">
+                <i class="bi bi-hdd me-2 text-primary"></i>
+                <code class="text-info">{{ device.ip_address }}</code>
+            </h4>
+            <small class="text-muted">{{ device.hostname or 'Unknown Hostname' }}</small>
+        </div>
+        <span class="badge bg-{{ get_risk_badge_class(device.risk_level) }} fs-6 ms-auto">
+            {{ device.risk_level }} Risk
+        </span>
+    </div>
+
+    <div class="row g-4 mb-4">
+        <!-- Device Info -->
+        <div class="col-md-4">
+            <div class="card border-0 h-100">
+                <div class="card-header"><h6 class="mb-0">Device Information</h6></div>
+                <div class="card-body">
+                    <table class="table table-sm table-borderless mb-0">
+                        <tr><th class="text-muted">IP Address</th><td><code>{{ device.ip_address }}</code></td></tr>
+                        <tr><th class="text-muted">MAC Address</th><td>{{ device.mac_address or '—' }}</td></tr>
+                        <tr><th class="text-muted">Hostname</th><td>{{ device.hostname or '—' }}</td></tr>
+                        <tr><th class="text-muted">First Seen</th><td class="small">{{ device.first_seen.strftime('%Y-%m-%d %H:%M') if device.first_seen else '—' }}</td></tr>
+                        <tr><th class="text-muted">Last Seen</th><td class="small">{{ device.last_seen.strftime('%Y-%m-%d %H:%M') if device.last_seen else '—' }}</td></tr>
+                        <tr><th class="text-muted">Connections</th><td>{{ device.total_connections }}</td></tr>
+                        <tr><th class="text-muted">Data Sent</th><td>{{ (device.bytes_sent / 1024 / 1024) | round(2) }} MB</td></tr>
+                        <tr><th class="text-muted">Data Recv</th><td>{{ (device.bytes_received / 1024 / 1024) | round(2) }} MB</td></tr>
+                        <tr><th class="text-muted">Risk Score</th>
+                            <td>
+                                <div class="d-flex align-items-center gap-2">
+                                    <div class="progress flex-grow-1" style="height:8px;">
+                                        <div class="progress-bar bg-{{ get_risk_badge_class(device.risk_level) }}"
+                                             style="width:{{ device.risk_score }}%"></div>
+                                    </div>
+                                    <strong>{{ device.risk_score }}/100</strong>
+                                </div>
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Alert History -->
+        <div class="col-md-8">
+            <div class="card border-0 h-100">
+                <div class="card-header">
+                    <h6 class="mb-0">Alert History (Last 50)</h6>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive" style="max-height:400px; overflow-y:auto;">
+                        <table class="table table-hover table-sm mb-0">
+                            <thead class="sticky-top">
+                                <tr>
+                                    <th class="ps-3">Time</th>
+                                    <th>Type</th>
+                                    <th>Severity</th>
+                                    <th>Status</th>
+                                    <th>Description</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for alert in alerts %}
+                                <tr>
+                                    <td class="ps-3 text-muted small">{{ alert.timestamp.strftime('%m/%d %H:%M') }}</td>
+                                    <td><small class="fw-semibold">{{ alert.alert_type }}</small></td>
+                                    <td>
+                                        <span class="badge bg-{% if alert.severity == 'Critical' %}danger{% elif alert.severity == 'High' %}danger bg-opacity-75{% elif alert.severity == 'Medium' %}warning text-dark{% else %}secondary{% endif %}">
+                                            {{ alert.severity }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-{% if alert.status == 'Open' %}secondary{% elif alert.status == 'Resolved' %}success{% else %}info{% endif %}">
+                                            {{ alert.status }}
+                                        </span>
+                                    </td>
+                                    <td class="small text-muted" style="max-width:250px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+                                        {{ alert.description or '—' }}
+                                    </td>
+                                </tr>
+                                {% else %}
+                                <tr><td colspan="5" class="text-center py-4 text-muted">No alerts for this device.</td></tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+{% endblock %}
