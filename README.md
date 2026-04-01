@@ -1,6 +1,6 @@
-# CampusSOC — Campus Security Operations Center
+# SOC — Log Monitoring & its Security Operations Center
 
-**Final Secure Edition | Cybersecurity Final Year Project**
+
 
 A lightweight, legally compliant Mini-SOC platform for campus network security monitoring.
 
